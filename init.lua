@@ -142,7 +142,7 @@ vim.opt.splitbelow = true
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
-vim.opt.list = true
+vim.opt.list = false
 vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
 -- Preview substitutions live, as you type!
@@ -157,6 +157,7 @@ vim.opt.scrolloff = 10
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
+vim.opt.tabstop = 2
 -- Set highlight on search, but clear on pressing <Esc> in normal mode
 vim.opt.hlsearch = true
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
@@ -203,9 +204,13 @@ vim.api.nvim_create_autocmd('TextYankPost', {
     vim.highlight.on_yank()
   end,
 })
-vim.api.nvim_create_autocmd('VimEnter', {
-  command = 'Neotree',
-})
+
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
+-- vim.api.nvim_create_autocmd('VimEnter', {
+--   command = 'Neotree',
+-- })
 
 -- [[ Install `lazy.nvim` plugin manager ]]
 --    See `:help lazy.nvim.txt` or https://github.com/folke/lazy.nvim for more info
@@ -290,6 +295,17 @@ require('lazy').setup({
         ['<leader>s'] = { name = '[S]earch', _ = 'which_key_ignore' },
         ['<leader>w'] = { name = '[W]orkspace', _ = 'which_key_ignore' },
       }
+    end,
+  },
+
+  {
+    'goolord/alpha-nvim',
+    dependencies = {
+      'nvim-tree/nvim-web-devicons',
+      'nvim-lua/plenary.nvim',
+    },
+    config = function()
+      require('alpha').setup(require('alpha.themes.theta').config)
     end,
   },
 
@@ -735,6 +751,7 @@ require('lazy').setup({
           --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
         },
         sources = {
+          -- { name = 'copilot' },
           { name = 'nvim_lsp' },
           { name = 'luasnip' },
           { name = 'path' },
@@ -743,13 +760,20 @@ require('lazy').setup({
     end,
   },
 
+  {
+    'rebelot/kanagawa.nvim',
+    priority = 1000,
+    -- init = function()
+    --   vim.cmd.colorscheme 'kanagawa'
+    -- end,
+  },
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
     -- change the command in the config to whatever the name of that colorscheme is.
     --
     -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
     'folke/tokyonight.nvim',
-    priority = 1000, -- Make sure to load this before all the other start plugins.
+    priority = 1001, -- Make sure to load this before all the other start plugins.
     init = function()
       -- Load the colorscheme here.
       -- Like many other themes, this one has different styles, and you could load
@@ -761,8 +785,89 @@ require('lazy').setup({
     end,
   },
 
+  -- Install 'norcalli/nvim-colorizer.lua' to highlight colors in your code
+  {
+    'norcalli/nvim-colorizer.lua',
+    event = 'VimEnter',
+    config = function()
+      require('colorizer').setup()
+    end,
+  },
+
+  {
+    'zbirenbaum/copilot.lua',
+    cmd = 'Copilot',
+    build = ':Copilot auth',
+    opts = {
+      suggestion = {
+        enabled = true,
+        debounce = 75,
+        auto_trigger = true,
+        keymap = {
+          accept = '<M-l>',
+          accept_word = false,
+          accept_line = false,
+          next = '<M-]>',
+          prev = '<M-[>',
+          dismiss = '<C-]>',
+        },
+      },
+      panel = { enabled = true },
+      filetypes = {
+        markdown = true,
+        help = true,
+        ['*'] = true,
+      },
+      copilot_node_command = 'node',
+    },
+  },
+
+  -- {
+  --   'zbirenbaum/copilot-cmp',
+  --   config = function()
+  --     require('copilot_cmp').setup()
+  --   end,
+  -- },
+  --
+  {
+    'ggandor/leap.nvim',
+    enabled = true,
+    keys = {
+      { 's', mode = { 'n', 'x', 'o' }, desc = 'Leap Forward to' },
+      { 'S', mode = { 'n', 'x', 'o' }, desc = 'Leap Backward to' },
+      { 'gs', mode = { 'n', 'x', 'o' }, desc = 'Leap from Windows' },
+    },
+    config = function(_, opts)
+      local leap = require 'leap'
+      for k, v in pairs(opts) do
+        leap.opts[k] = v
+      end
+      leap.add_default_mappings(true)
+      vim.keymap.del({ 'x', 'o' }, 'x')
+      vim.keymap.del({ 'x', 'o' }, 'X')
+    end,
+  },
+  {
+    'tpope/vim-repeat',
+    event = 'VeryLazy',
+  },
   -- Highlight todo, notes, etc in comments
   { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
+
+  {
+    'echasnovski/mini.surround',
+    opts = {
+      mappings = {
+        add = 'gza', -- Add surrounding in Normal and Visual modes
+        delete = 'gzd', -- Delete surrounding
+        find = 'gzf', -- Find surrounding (to the right)
+        find_left = 'gzF', -- Find surrounding (to the left)
+        highlight = 'gzh', -- Highlight surrounding
+        replace = 'gzr', -- Replace surrounding
+        update_n_lines = 'gzn', -- Update `n_lines`
+      },
+    },
+  },
 
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
@@ -780,8 +885,9 @@ require('lazy').setup({
       -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
       -- - sd'   - [S]urround [D]elete [']quotes
       -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
+      -- require('mini.surround').setup()
 
+      -- require('mini.jump2d').setup()
       -- Simple and easy statusline.
       --  You could remove this setup call if you don't like it,
       --  and try some other statusline plugin
